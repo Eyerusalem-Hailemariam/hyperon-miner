@@ -11,17 +11,42 @@
 (= (miner () $dbspace $minsup)
         ()
 )
+(= (candidate-canonicalize-list ()) ())
+(= (candidate-canonicalize-list $candidates)
+   (let*
+       (
+           ($candidate (candidate-remove-empty-value (car-atom $candidates)))
+           ($tail (candidate-canonicalize-list (cdr-atom $candidates)))
+       )
+       (if (== $candidate ())
+           $tail
+           (cons-atom $candidate $tail))))
 
 (= (miner $pattern $dbspace $minsup)
-        (let*(
-                ($vals (collapse (valuation $pattern $dbspace)))
-                ($shallow_abstractions (unique-atom (collapse (shallow_abstractions $vals () 0))))
-                ($specialized (specialization $pattern (superpose $shallow_abstractions)))
-                ($candidates (candidatepattern $specialized $minsup $dbspace))
-                (true (println! "==== Candidate Pattern ended ====="))
-        )
-        $candidates
-        )
+        (let $seed-support (sup-num $dbspace $pattern)
+             (if (>= $seed-support $minsup)
+                 
+                 ($pattern $pattern $seed-support)
+                 (let*
+                     (
+                         ($vals (collapse (valuation $pattern $dbspace)))
+                         ($shallow_abstractions
+                             (unique-atom
+                                 (collapse (shallow_abstractions $vals () 0))))
+                         ;; Normalize and deduplicate fallback specializations
+                         ;; before support counting.
+                         ($specialized
+                             (unique-atom
+                                 (candidate-canonicalize-list
+                                     (collapse
+                                         (specialization $pattern
+                                             (superpose $shallow_abstractions))))))
+                         ($candidates
+                             (candidatepattern (superpose $specialized)
+                                               $minsup $dbspace))
+                         (true (println! "==== Candidate Pattern ended ====="))
+                     )
+                     $candidates)))
 )
 
 

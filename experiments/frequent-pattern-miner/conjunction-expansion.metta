@@ -234,7 +234,11 @@
         )
         (let* (
             (true (println! "==== Formating  started ====="))
-            ($final (match $cndpspace (CandidatePattern $pattern $cnt) (replacev (supportOf $pattern $cnt))))
+            ;; CandidateResult already stores the normalized display pattern.
+            ;; Re-running replacev here can leave a non-terminating stream of
+            ;; empty alternatives in the Prolog-backed evaluator.
+            ($final (match $cndpspace (CandidateResult $pattern $cnt) (supportOf $pattern $cnt)))
+            (true (println! "==== Formatter candidate results collected ====="))
         )
         $final
         )
